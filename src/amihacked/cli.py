@@ -12,6 +12,10 @@ from amihacked.collectors.common.logs import LogCollector
 from amihacked.collectors.common.network import NetworkCollector
 from amihacked.collectors.common.processes import ProcessCollector
 from amihacked.collectors.common.system import SystemCollector
+from amihacked.collectors.windows.windows_registry import WindowsRegistryCollector
+from amihacked.collectors.windows.windows_scheduled_tasks import WindowsScheduledTasksCollector
+from amihacked.collectors.windows.windows_services import WindowsServicesCollector
+from amihacked.collectors.windows.windows_startup_items import WindowsStartupItemsCollector
 from amihacked.core.permissions import elevation_status, is_elevated, relaunch_with_elevation
 from amihacked.core.platform_detect import current_platform
 from amihacked.core.scan_context import ScanContext
@@ -91,6 +95,15 @@ def scan(
     )
 
     collectors = [SystemCollector(), ProcessCollector(), NetworkCollector()]
+    if context.platform == "windows":
+        collectors.extend(
+            [
+                WindowsStartupItemsCollector(),
+                WindowsRegistryCollector(),
+                WindowsScheduledTasksCollector(),
+                WindowsServicesCollector(),
+            ]
+        )
     if not skip_logs:
         collectors.append(LogCollector(max_lines_per_file=log_lines))
     collector_results = {}
@@ -121,11 +134,25 @@ def scan(
     processes_result = collector_results["processes"]
     network_result = collector_results["network_connections"]
     log_result = collector_results.get("log_events")
+    startup_result = collector_results.get("startup_items")
+    registry_result = collector_results.get("registry_run_keys")
+    scheduled_tasks_result = collector_results.get("scheduled_tasks")
+    services_result = collector_results.get("services")
+    persistence_artifacts = [
+        *(startup_result.artifacts if startup_result else []),
+        *(registry_result.artifacts if registry_result else []),
+        *(scheduled_tasks_result.artifacts if scheduled_tasks_result else []),
+        *(services_result.artifacts if services_result else []),
+    ]
 
     with runtime.stage("write:raw_artifacts"):
         writer.write_json("raw/system_info.json", system_result.artifacts[0] if system_result.artifacts else {}, "system")
         writer.write_json("raw/processes.json", processes_result.artifacts, "process")
         writer.write_json("raw/network_connections.json", network_result.artifacts, "network")
+        writer.write_json("raw/startup_items.json", startup_result.artifacts if startup_result else [], "startup_items")
+        writer.write_json("raw/registry_run_keys.json", registry_result.artifacts if registry_result else [], "registry_run_keys")
+        writer.write_json("raw/scheduled_tasks.json", scheduled_tasks_result.artifacts if scheduled_tasks_result else [], "scheduled_tasks")
+        writer.write_json("raw/services.json", services_result.artifacts if services_result else [], "services")
         writer.write_json("raw/log_events.json", log_result.artifacts if log_result else [], "log")
         writer.write_json(
             "raw/process_network_map.json",
@@ -137,7 +164,7 @@ def scan(
         "process": processes_result.artifacts,
         "network": network_result.artifacts,
         "log": log_result.artifacts if log_result else [],
-        "persistence": [],
+        "persistence": persistence_artifacts,
     }
     with runtime.stage("normalize:evidence") as timing:
         evidence = normalize_scan_evidence(raw_evidence)

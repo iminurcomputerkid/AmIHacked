@@ -1,0 +1,21 @@
+id: AH-WIN-PERSIST-0004
+name: Persistence Command References Remote URL
+enabled: true
+source: persistence
+severity: high
+confidence: 0.76
+description: Detects autorun, service, or scheduled task commands that include HTTP or HTTPS URLs.
+conditions:
+  all:
+    - field: source
+      exists: true
+    - field: command
+      contains_any:
+        - "http://"
+        - "https://"
+mitre:
+  - technique_id: T1105
+    technique_name: Ingress Tool Transfer
+    tactic: Command and Control
+recommendation: Review the URL, command arguments, persistence source, and whether the remote content is expected.
+

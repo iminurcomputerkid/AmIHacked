@@ -1,0 +1,23 @@
+id: AH-WIN-PERSIST-0003
+name: Service Points To User-Writable Path
+enabled: true
+source: persistence
+severity: high
+confidence: 0.82
+description: Detects Windows services whose binary path points to AppData, Temp, Users Public, or another user-writable location.
+conditions:
+  all:
+    - field: source
+      equals: service
+    - field: command
+      contains_any:
+        - "\\AppData\\"
+        - "\\Temp\\"
+        - "\\Users\\Public\\"
+        - "/tmp/"
+mitre:
+  - technique_id: T1543.003
+    technique_name: Windows Service
+    tactic: Persistence
+recommendation: Review service name, binary path, signer, service account, file hash, and installation time from event logs.
+

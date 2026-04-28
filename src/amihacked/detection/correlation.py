@@ -3,7 +3,7 @@ from typing import Any
 from amihacked.core.models import Finding
 from amihacked.utils.ids import stable_id
 from amihacked.utils.paths import looks_user_writable
-from amihacked.utils.process_utils import OFFICE_PROCESS_NAMES, SHELL_PROCESS_NAMES, has_remote_url
+from amihacked.utils.process_utils import LOLBIN_PROCESS_NAMES, OFFICE_PROCESS_NAMES, SHELL_PROCESS_NAMES, has_remote_url
 
 
 class CorrelationEngine:
@@ -12,6 +12,7 @@ class CorrelationEngine:
         processes = evidence.get("process", [])
         networks = evidence.get("network", [])
         logs = evidence.get("log", [])
+        persistence = evidence.get("persistence", [])
         by_pid = {process.get("pid"): process for process in processes if process.get("pid") is not None}
         public_network_by_pid: dict[int, list[dict[str, Any]]] = {}
 
@@ -92,8 +93,68 @@ class CorrelationEngine:
                     )
                 )
 
+        findings.extend(self._correlate_persistence(persistence))
         findings.extend(self._correlate_logs(logs, len(existing_findings) + len(findings)))
         return _dedupe_findings(findings)
+
+    def _correlate_persistence(self, persistence: list[dict[str, Any]]) -> list[Finding]:
+        findings: list[Finding] = []
+        for artifact in persistence:
+            artifact_id = artifact.get("artifact_id")
+            if not artifact_id:
+                continue
+            command = artifact.get("command")
+            path = artifact.get("path")
+            source = artifact.get("source") or "persistence"
+            name = artifact.get("name") or "unnamed"
+            lowered_command = str(command or path or "").lower()
+
+            if looks_user_writable(path) or looks_user_writable(command):
+                findings.append(
+                    self._finding(
+                        title="Persistence Mechanism Points To User-Writable Path",
+                        severity="high",
+                        confidence=0.82,
+                        description="A persistence mechanism references AppData, Temp, Users Public, or another user-writable location.",
+                        evidence_refs=[artifact_id],
+                        reason=f"{source} entry {name!r} points to {path or command!r}.",
+                        recommendation="Inspect the target file hash, signer, owner, creation time, and related process/network activity.",
+                        mitre=["T1060", "T1053", "T1543"],
+                        correlation_id="persistence-user-writable-path",
+                    )
+                )
+
+            if has_remote_url(command):
+                findings.append(
+                    self._finding(
+                        title="Persistence Command References Remote URL",
+                        severity="high",
+                        confidence=0.78,
+                        description="A persistence command references remote content, which can indicate downloader-style persistence.",
+                        evidence_refs=[artifact_id],
+                        reason=f"{source} entry {name!r} command contains a remote URL.",
+                        recommendation="Review the URL, downloaded content, execution context, and whether the entry is expected.",
+                        mitre=["T1105", "T1053", "T1543"],
+                        correlation_id="persistence-remote-url",
+                    )
+                )
+
+            if any(lolbin in lowered_command for lolbin in LOLBIN_PROCESS_NAMES):
+                findings.append(
+                    self._finding(
+                        title="Persistence Uses Living-Off-The-Land Binary",
+                        severity="medium",
+                        confidence=0.68,
+                        description="A persistence mechanism launches a common living-off-the-land binary.",
+                        evidence_refs=[artifact_id],
+                        reason=f"{source} entry {name!r} references a LOLBin in its command.",
+                        recommendation="Review command-line arguments, parent installer context, and whether this autorun behavior is expected.",
+                        mitre=["T1218", "T1053", "T1543"],
+                        correlation_id="persistence-lolbin",
+                    )
+                )
+
+        return findings
 
     def _correlate_logs(self, logs: list[dict[str, Any]], _offset: int) -> list[Finding]:
         findings: list[Finding] = []

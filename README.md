@@ -25,12 +25,13 @@ On Windows, run from an elevated PowerShell or Command Prompt. `amihacked scan` 
 
 ## Current Version
 
-`v0.2` provides a local snapshot scanner with a hardened rule pipeline:
+`v0.3` provides a local snapshot scanner with persistence collection and a hardened rule pipeline:
 
 - System information collection
 - Process collection with parent process mapping and executable hashes when accessible
 - Network connection collection with process ownership and public/private remote IP classification
 - Local log/event collection as first-class evidence (`source: log`)
+- Windows persistence collection for Registry Run/RunOnce keys, Startup folders, scheduled tasks, and services
 - A process/network join artifact
 - Normalized evidence files under `normalized/`
 - Rule matches, correlations, risk score, rule validation results, and evidence summaries under `findings/`
@@ -41,7 +42,9 @@ On Windows, run from an elevated PowerShell or Command Prompt. `amihacked scan` 
 - Elapsed scan timing and per-stage runtime metadata
 - Standalone `amihacked validate-rules` command
 
-## v0.2 Detection Coverage
+See `CHANGELOG.md` for the running implementation history.
+
+## Detection Coverage
 
 The current builtin rules and correlations cover early suspicious behaviors:
 
@@ -54,8 +57,27 @@ The current builtin rules and correlations cover early suspicious behaviors:
 - Service or scheduled task creation events in logs
 - PowerShell script block logging events
 - Defender malware detection events
+- Registry, scheduled task, service, and Startup folder persistence evidence
+- Persistence entries pointing to AppData, Temp, Users Public, or remote URLs
 - Correlations for suspicious process paths plus external network activity
+- Correlations for persistence using user-writable paths, remote URLs, or LOLBins
 - Correlations for clustered failed auth, privileged auth activity, service/task creation, and security product detections
+
+## Persistence Collection
+
+On Windows, v0.3 collects:
+
+- `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`
+- `HKCU\Software\Microsoft\Windows\CurrentVersion\RunOnce`
+- `HKLM\Software\Microsoft\Windows\CurrentVersion\Run`
+- `HKLM\Software\Microsoft\Windows\CurrentVersion\RunOnce`
+- `HKLM\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Run`
+- `HKLM\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce`
+- User and all-users Startup folders
+- Scheduled tasks
+- Services
+
+These sources are normalized into `normalized/persistence.normalized.json` and participate in rule matching, correlations, scoring, and reports.
 
 ## Log Collection
 
@@ -69,7 +91,7 @@ Use `--skip-logs` for a faster scan, or `--log-lines` to tune how much file-back
 
 ## Case Output Highlights
 
-Important v0.2 files:
+Important case files:
 
 - `raw/`: collector output before cleanup
 - `normalized/`: stable artifacts used by detections
@@ -81,7 +103,7 @@ Important v0.2 files:
 
 ## Next Milestone
 
-`v0.3` is persistence collection: Windows Registry Run/RunOnce keys, Startup folders, scheduled tasks, services, and persistence-specific detections.
+`v0.4` is report and analyst workflow polish: richer HTML sections, finding grouping, case summaries, and easier evidence navigation.
 
 ## Design Boundary
 

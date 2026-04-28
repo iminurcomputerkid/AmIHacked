@@ -1,0 +1,23 @@
+id: AH-WIN-PERSIST-0002
+name: Scheduled Task Points To User-Writable Path
+enabled: true
+source: persistence
+severity: high
+confidence: 0.82
+description: Detects scheduled tasks that execute commands from AppData, Temp, Users Public, or similar user-writable paths.
+conditions:
+  all:
+    - field: source
+      equals: scheduled_task
+    - field: command
+      contains_any:
+        - "\\AppData\\"
+        - "\\Temp\\"
+        - "\\Users\\Public\\"
+        - "/tmp/"
+mitre:
+  - technique_id: T1053.005
+    technique_name: Scheduled Task
+    tactic: Persistence
+recommendation: Review the task author, trigger, command path, signer, file hash, and whether it was recently created.
+

@@ -35,3 +35,19 @@ def test_defender_log_event_creates_high_correlation():
     assert findings[0].title == "Security Product Detection Event Observed"
     assert findings[0].severity == "high"
 
+
+def test_persistence_user_writable_path_creates_correlation():
+    persistence = [
+        {
+            "artifact_id": "persistence:bad",
+            "type": "persistence",
+            "source": "scheduled_task",
+            "name": "BadTask",
+            "command": "C:\\Users\\Alice\\AppData\\bad.exe",
+            "path": "C:\\Users\\Alice\\AppData\\bad.exe",
+        }
+    ]
+
+    findings = CorrelationEngine().run({"process": [], "network": [], "log": [], "persistence": persistence}, [])
+
+    assert any(finding.title == "Persistence Mechanism Points To User-Writable Path" for finding in findings)
