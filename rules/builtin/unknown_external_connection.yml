@@ -1,0 +1,20 @@
+id: AH-WIN-NET-0002
+name: External Connection Without Process Attribution
+enabled: true
+source: network
+severity: medium
+confidence: 0.5
+description: Detects established external network connections where the owning process name was not available during collection.
+conditions:
+  all:
+    - field: status
+      equals: ESTABLISHED
+    - field: is_public_remote
+      equals: true
+    - field: process_name
+      not_exists: true
+mitre:
+  - technique_id: T1105
+    technique_name: Ingress Tool Transfer
+    tactic: Command and Control
+recommendation: Re-run collection with elevated permissions if possible and identify the owning process for the connection.

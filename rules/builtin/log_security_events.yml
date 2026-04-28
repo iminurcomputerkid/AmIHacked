@@ -1,0 +1,23 @@
+id: AH-LOG-SEC-0001
+name: Windows Service Installation Event
+enabled: true
+source: log
+severity: medium
+confidence: 0.7
+description: Detects Windows service installation events in logs, which can indicate legitimate administration or persistence.
+conditions:
+  all:
+    - field: source
+      equals: windows_event_log
+    - field: event_id
+      equals_any:
+        - 4697
+        - 7045
+        - "4697"
+        - "7045"
+mitre:
+  - technique_id: T1543.003
+    technique_name: Windows Service
+    tactic: Persistence
+recommendation: Review the service name, binary path, signer, creator account, and whether the service path is user-writable.
+

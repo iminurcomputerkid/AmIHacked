@@ -1,0 +1,21 @@
+id: AH-LOG-PS-0001
+name: PowerShell Script Block Logging Event
+enabled: true
+source: log
+severity: low
+confidence: 0.5
+description: Detects PowerShell script block logging events so analysts can inspect historical script execution evidence.
+conditions:
+  all:
+    - field: source
+      equals: windows_event_log
+    - field: event_id
+      equals_any:
+        - 4104
+        - "4104"
+mitre:
+  - technique_id: T1059.001
+    technique_name: PowerShell
+    tactic: Execution
+recommendation: Review the script block text, parent process context, user, and surrounding network activity.
+

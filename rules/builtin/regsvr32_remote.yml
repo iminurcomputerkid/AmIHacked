@@ -1,0 +1,22 @@
+id: AH-WIN-LOLBIN-0003
+name: Regsvr32 Remote Scriptlet Execution
+enabled: true
+source: process
+severity: high
+confidence: 0.82
+description: Detects regsvr32.exe command lines that reference remote scriptlet content or scrobj.dll execution.
+conditions:
+  all:
+    - field: name
+      equals: regsvr32.exe
+    - field: command_line
+      contains_any:
+        - "http://"
+        - "https://"
+        - "scrobj.dll"
+mitre:
+  - technique_id: T1218.010
+    technique_name: Regsvr32
+    tactic: Defense Evasion
+recommendation: Review the remote URL, inspect parent process lineage, and check for related persistence or downloaded payloads.
+

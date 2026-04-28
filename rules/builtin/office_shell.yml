@@ -1,0 +1,28 @@
+id: AH-WIN-PROC-0003
+name: Office Application Spawned Command Shell
+enabled: true
+source: process
+severity: high
+confidence: 0.85
+description: Office applications spawning scripting or shell processes may indicate malicious macro or document execution.
+conditions:
+  all:
+    - field: parent_name
+      equals_any:
+        - winword.exe
+        - excel.exe
+        - powerpnt.exe
+        - outlook.exe
+    - field: name
+      equals_any:
+        - powershell.exe
+        - cmd.exe
+        - wscript.exe
+        - cscript.exe
+        - mshta.exe
+mitre:
+  - technique_id: T1204.002
+    technique_name: Malicious File
+    tactic: Execution
+recommendation: Review the document opened by the user, inspect command line arguments, and check child network connections.
+

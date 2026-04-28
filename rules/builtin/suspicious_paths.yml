@@ -1,0 +1,21 @@
+id: AH-WIN-PROC-0002
+name: Executable Running From User-Writable Directory
+enabled: true
+source: process
+severity: medium
+confidence: 0.65
+description: Detects executable paths under AppData, Temp, or similar user-writable locations that are commonly abused by malware.
+conditions:
+  any:
+    - field: exe_path
+      path_contains: "\\AppData\\"
+    - field: exe_path
+      path_contains: "\\Temp\\"
+    - field: exe_path
+      path_contains: "/tmp/"
+mitre:
+  - technique_id: T1204
+    technique_name: User Execution
+    tactic: Execution
+recommendation: Review the executable hash, signer, parent process, and whether the path is expected for the software.
+

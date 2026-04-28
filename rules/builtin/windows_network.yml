@@ -1,0 +1,21 @@
+id: AH-WIN-NET-0001
+name: Unknown Process Listening On Unusual Port
+enabled: true
+source: network
+severity: medium
+confidence: 0.55
+description: Detects listening TCP sockets on uncommon high ports where process ownership is unavailable or unclear.
+conditions:
+  all:
+    - field: status
+      equals: LISTEN
+    - field: local_port
+      greater_than: 49151
+    - field: process_name
+      not_exists: true
+mitre:
+  - technique_id: T1571
+    technique_name: Non-Standard Port
+    tactic: Command and Control
+recommendation: Identify the owning process with elevated collection, validate whether the listener is expected, and review firewall exposure.
+

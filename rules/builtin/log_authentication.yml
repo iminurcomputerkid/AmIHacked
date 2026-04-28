@@ -1,0 +1,29 @@
+id: AH-LOG-AUTH-0001
+name: Failed Authentication Activity In Logs
+enabled: true
+source: log
+severity: low
+confidence: 0.45
+description: Detects failed authentication events in Windows, Linux, or macOS logs that may warrant review when clustered or paired with other suspicious activity.
+conditions:
+  any:
+    - all:
+        - field: source
+          equals: windows_event_log
+        - field: event_id
+          equals_any:
+            - 4625
+            - "4625"
+    - all:
+        - field: source
+          equals: authentication
+        - field: message
+          contains_any:
+            - "Failed password"
+            - "authentication failure"
+            - "failed login"
+mitre:
+  - technique_id: T1110
+    technique_name: Brute Force
+    tactic: Credential Access
+recommendation: Review source accounts, source IPs, timing, and whether the failed logons cluster around other suspicious process or persistence activity.

@@ -1,0 +1,21 @@
+id: AH-WIN-LOLBIN-0001
+name: MSHTA Executing Remote Content
+enabled: true
+source: process
+severity: high
+confidence: 0.82
+description: Detects mshta.exe command lines that reference remote content, a common living-off-the-land execution pattern.
+conditions:
+  all:
+    - field: name
+      equals: mshta.exe
+    - field: command_line
+      contains_any:
+        - "http://"
+        - "https://"
+mitre:
+  - technique_id: T1218.005
+    technique_name: Mshta
+    tactic: Defense Evasion
+recommendation: Review the remote URL, parent process, downloaded content, and any child processes.
+

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AmIHacked Report {{ case_id }}</title>
+  <style>
+    :root {
+      --ink: #14213d;
+      --muted: #5f6c7b;
+      --paper: #fffaf0;
+      --card: #ffffff;
+      --accent: #d97706;
+      --line: #e7dcc8;
+    }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(217,119,6,.18), transparent 32rem),
+        linear-gradient(135deg, #fffaf0, #f6efe3);
+    }
+    main {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 48px 20px;
+    }
+    header, section {
+      background: rgba(255,255,255,.86);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: 0 18px 60px rgba(20,33,61,.08);
+      padding: 28px;
+      margin-bottom: 22px;
+    }
+    h1, h2, h3 { margin-top: 0; }
+    .score {
+      display: inline-flex;
+      gap: 10px;
+      align-items: baseline;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .note, .muted { color: var(--muted); }
+    .finding {
+      border-top: 1px solid var(--line);
+      padding-top: 18px;
+      margin-top: 18px;
+    }
+    code {
+      background: #f4ead7;
+      border-radius: 6px;
+      padding: 2px 6px;
+    }
+    ul { padding-left: 22px; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>AmIHacked Report</h1>
+      <p class="muted">Case {{ case_id }}</p>
+      <div class="score">{{ risk_score.score }}/100 <span>{{ risk_score.level }}</span></div>
+      <p class="note">This report describes observed suspicious behavior. It does not prove compromise by itself.</p>
+    </header>
+
+    <section>
+      <h2>Findings</h2>
+      {% if findings %}
+        {% for finding in findings %}
+          <article class="finding">
+            <h3>{{ finding.title }}</h3>
+            <p><strong>Severity:</strong> {{ finding.severity }} | <strong>Confidence:</strong> {{ "%.2f"|format(finding.confidence) }}</p>
+            <p><strong>Score Impact:</strong> {{ finding.score_impact }}</p>
+            <p>{{ finding.description }}</p>
+            <p><strong>Reason:</strong> {{ finding.reason }}</p>
+            {% if finding.recommendation %}<p><strong>Recommendation:</strong> {{ finding.recommendation }}</p>{% endif %}
+            {% if finding.score_details %}
+              <p><strong>Score Details:</strong></p>
+              <ul>
+                {% for detail in finding.score_details %}<li>{{ detail }}</li>{% endfor %}
+              </ul>
+            {% endif %}
+            {% if finding.evidence_refs %}
+              <p><strong>Evidence:</strong>
+              {% for ref in finding.evidence_refs %}<code>{{ ref }}</code>{% endfor %}
+              </p>
+              <ul>
+                {% for ref in finding.evidence_refs %}
+                  {% if ref in evidence_index %}<li>{{ evidence_index[ref].summary }}</li>{% endif %}
+                {% endfor %}
+              </ul>
+            {% endif %}
+            {% if finding.mitre_techniques %}
+              <p><strong>MITRE:</strong> {{ finding.mitre_techniques|join(", ") }}</p>
+            {% endif %}
+          </article>
+        {% endfor %}
+      {% else %}
+        <p>No suspicious findings were produced by the currently enabled rules.</p>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>Score Reasons</h2>
+      <ul>
+        {% for reason in risk_score.reasons %}
+          <li>{% if reason.points >= 0 %}+{% endif %}{{ reason.points }} {{ reason.reason }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

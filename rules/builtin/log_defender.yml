@@ -1,0 +1,20 @@
+id: AH-LOG-DEF-0001
+name: Defender Malware Detection Event
+enabled: true
+source: log
+severity: high
+confidence: 0.85
+description: Detects Windows Defender malware detection events in collected logs.
+conditions:
+  all:
+    - field: source
+      equals: windows_event_log
+    - field: event_id
+      equals_any:
+        - 1116
+        - "1116"
+mitre:
+  - technique_id: TA0005
+    technique_name: Defense Evasion
+    tactic: Defense Evasion
+recommendation: Review the threat name, affected path, remediation status, and related process activity before drawing conclusions.

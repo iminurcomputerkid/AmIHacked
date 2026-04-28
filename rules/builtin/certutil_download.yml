@@ -1,0 +1,23 @@
+id: AH-WIN-LOLBIN-0002
+name: Certutil Download-Like Command
+enabled: true
+source: process
+severity: high
+confidence: 0.78
+description: Detects certutil.exe command lines that reference remote URLs or download/cache options often used to retrieve content.
+conditions:
+  all:
+    - field: name
+      equals: certutil.exe
+    - field: command_line
+      contains_any:
+        - "http://"
+        - "https://"
+        - "-urlcache"
+        - "-split"
+mitre:
+  - technique_id: T1105
+    technique_name: Ingress Tool Transfer
+    tactic: Command and Control
+recommendation: Review the remote URL, downloaded output path, parent process, and related process/network activity.
+

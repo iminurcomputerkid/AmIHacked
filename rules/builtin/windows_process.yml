@@ -1,0 +1,24 @@
+id: AH-WIN-PROC-0001
+name: Encoded PowerShell
+enabled: true
+source: process
+severity: high
+confidence: 0.85
+description: Detects PowerShell using encoded command arguments, which can hide script content from casual review.
+conditions:
+  all:
+    - field: name
+      equals_any:
+        - powershell.exe
+        - pwsh.exe
+    - field: command_line
+      contains_any:
+        - "-enc"
+        - "-encodedcommand"
+        - "FromBase64String"
+mitre:
+  - technique_id: T1059.001
+    technique_name: PowerShell
+    tactic: Execution
+recommendation: Decode the command line, inspect the parent process, and review related network connections.
+

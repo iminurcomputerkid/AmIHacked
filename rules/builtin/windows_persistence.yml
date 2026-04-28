@@ -1,0 +1,21 @@
+id: AH-WIN-PERSIST-0001
+name: Persistence Entry Points To User-Writable Path
+enabled: true
+source: persistence
+severity: high
+confidence: 0.8
+description: Detects persistence entries that point to AppData or Temp style paths, which are frequently abused for user-level persistence.
+conditions:
+  all:
+    - field: source
+      exists: true
+    - field: command
+      contains_any:
+        - "\\AppData\\"
+        - "\\Temp\\"
+        - "/tmp/"
+mitre:
+  - technique_id: T1060
+    technique_name: Registry Run Keys / Startup Folder
+    tactic: Persistence
+recommendation: Verify whether the persistence entry is expected, inspect the target binary, and check its signer and hash.
