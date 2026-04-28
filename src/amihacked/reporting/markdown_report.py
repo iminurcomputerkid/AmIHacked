@@ -7,8 +7,13 @@ def build_markdown_report(
     findings: list[Finding],
     risk_score: RiskScore,
     evidence_index: dict | None = None,
+    report_context: dict | None = None,
 ) -> str:
     evidence_index = evidence_index or {}
+    report_context = report_context or {}
+    summary = report_context.get("summary", {})
+    collection_health = report_context.get("collection_health", {})
+    timeline = report_context.get("timeline", [])
     lines = [
         f"# AmIHacked Report: {case_id}",
         "",
@@ -16,9 +21,42 @@ def build_markdown_report(
         "",
         "AmIHacked does not conclude that this host is definitely compromised. It reports observed behaviors that may warrant investigation.",
         "",
-        "## Findings",
+        "## Executive Summary",
+        "",
+        f"- Findings: {summary.get('finding_count', len(findings))}",
+        f"- Severity Counts: {summary.get('severity_counts', {})}",
+        f"- Artifact Counts: {summary.get('artifact_counts', {})}",
+        f"- Elevated Collection: {collection_health.get('elevated')}",
+        "",
+        "## Collection Health",
+        "",
+        f"- Collectors: {collection_health.get('collector_count', 0)}",
+        f"- Status Counts: {collection_health.get('status_counts', {})}",
         "",
     ]
+    for collector in collection_health.get("collectors", [])[:20]:
+        lines.append(
+            f"- {collector['name']}: {collector['status']} ({collector['artifact_count']} artifacts)"
+        )
+    lines.extend(
+        [
+            "",
+            "## Top Timeline Events",
+            "",
+        ]
+    )
+    if timeline:
+        for event in timeline[:25]:
+            lines.append(f"- {event['timestamp']} {event['event_type']}: {event['summary']}")
+    else:
+        lines.append("- No timestamped events available.")
+    lines.extend(
+        [
+            "",
+            "## Findings",
+            "",
+        ]
+    )
 
     if not findings:
         lines.extend(["No suspicious findings were produced by the currently enabled rules.", ""])

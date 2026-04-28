@@ -11,6 +11,7 @@ def build_html_report(
     findings: list[Finding],
     risk_score: RiskScore,
     evidence_index: dict | None = None,
+    report_context: dict | None = None,
 ) -> str:
     template_dir = Path(__file__).resolve().parent / "templates"
     env = Environment(
@@ -18,4 +19,10 @@ def build_html_report(
         autoescape=select_autoescape(["html", "xml"]),
     )
     template = env.get_template("report.html.j2")
-    return template.render(case_id=case_id, findings=findings, risk_score=risk_score, evidence_index=evidence_index or {})
+    return template.render(
+        case_id=case_id,
+        findings=findings,
+        risk_score=risk_score,
+        evidence_index=evidence_index or {},
+        report_context=report_context or {},
+    )

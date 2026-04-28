@@ -49,6 +49,21 @@
       padding-top: 18px;
       margin-top: 18px;
     }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .metric {
+      background: #f9f1e2;
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .metric strong {
+      display: block;
+      font-size: 24px;
+      color: var(--accent);
+    }
     code {
       background: #f4ead7;
       border-radius: 6px;
@@ -65,6 +80,57 @@
       <div class="score">{{ risk_score.score }}/100 <span>{{ risk_score.level }}</span></div>
       <p class="note">This report describes observed suspicious behavior. It does not prove compromise by itself.</p>
     </header>
+
+    <section>
+      <h2>Executive Summary</h2>
+      <div class="grid">
+        <div class="metric"><span>Findings</span><strong>{{ report_context.summary.finding_count|default(findings|length) }}</strong></div>
+        <div class="metric"><span>Processes</span><strong>{{ report_context.summary.artifact_counts.process|default(0) }}</strong></div>
+        <div class="metric"><span>Network</span><strong>{{ report_context.summary.artifact_counts.network|default(0) }}</strong></div>
+        <div class="metric"><span>Logs</span><strong>{{ report_context.summary.artifact_counts.log|default(0) }}</strong></div>
+        <div class="metric"><span>Persistence</span><strong>{{ report_context.summary.artifact_counts.persistence|default(0) }}</strong></div>
+      </div>
+      <p class="muted">Severity counts: {{ report_context.summary.severity_counts|default({}) }}</p>
+    </section>
+
+    <section>
+      <h2>Collection Health</h2>
+      <p><strong>Elevated:</strong> {{ report_context.collection_health.elevated|default("unknown") }}</p>
+      {% if report_context.collection_health.privilege_warning %}
+        <p class="note">{{ report_context.collection_health.privilege_warning }}</p>
+      {% endif %}
+      <ul>
+        {% for collector in report_context.collection_health.collectors|default([]) %}
+          <li>{{ collector.name }}: {{ collector.status }} ({{ collector.artifact_count }} artifacts)</li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section>
+      <h2>Timeline</h2>
+      {% if report_context.timeline %}
+        <ul>
+          {% for event in report_context.timeline[:50] %}
+            <li><strong>{{ event.timestamp }}</strong> {{ event.event_type }}: {{ event.summary }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>No timestamped events available.</p>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>Finding Groups</h2>
+      {% if report_context.finding_groups %}
+        <ul>
+          {% for group, grouped_findings in report_context.finding_groups.items() %}
+            <li><code>{{ group }}</code>: {{ grouped_findings|length }} findings</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>No finding groups available.</p>
+      {% endif %}
+    </section>
 
     <section>
       <h2>Findings</h2>

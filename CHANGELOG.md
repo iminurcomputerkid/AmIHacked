@@ -4,8 +4,23 @@ All notable AmIHacked implementation changes are tracked here.
 
 ## Unreleased
 
-- Next planned milestone: `v0.4` HTML/reporting polish and analyst workflow improvements.
-- Planned focus: richer report sections, finding grouping, case summaries, and clearer evidence navigation.
+- Next planned milestone: `v0.5` intel update system.
+- Planned focus: local intel snapshots, source scaffolding for Sigma/LOLBAS/MITRE/CISA KEV, and conversion into rule candidates without modifying Python code.
+
+## v0.4.0
+
+- Added report context generation for executive summaries, artifact counts, severity counts, and top findings.
+- Added collection health summaries with collector statuses, artifact counts, warnings, errors, privilege status, and status counts.
+- Added timeline generation from process start times, log timestamps, persistence modification times, and timestamped findings.
+- Added finding grouping by process, persistence item, or network evidence reference.
+- Sorted findings by severity and confidence before writing findings and reports.
+- Added `findings/timeline.json`, `findings/collection_health.json`, and `findings/finding_groups.json`.
+- Enriched JSON reports with structured report context.
+- Enriched Markdown reports with executive summary, collection health, and timeline sections.
+- Enriched HTML reports with executive summary metrics, collection health, timeline, and finding group sections.
+- Implemented `amihacked report <case_dir>` to rebuild JSON, Markdown, and HTML reports from an existing case.
+- Added case-reading helpers for report regeneration.
+- Added tests for timeline generation, report context, and report regeneration.
 
 ## v0.3.0
 

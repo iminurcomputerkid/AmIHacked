@@ -19,13 +19,14 @@ sudo amihacked scan --full
 sudo amihacked scan --skip-logs
 sudo amihacked scan --log-lines 10000
 amihacked validate-rules
+amihacked report ./output/cases/case001
 ```
 
 On Windows, run from an elevated PowerShell or Command Prompt. `amihacked scan` requires Administrator/root privileges by default because protected process details, network ownership, authentication logs, and security logs are often hidden from normal users. Use `--allow-unelevated` only for development or intentionally incomplete best-effort scans.
 
 ## Current Version
 
-`v0.3` provides a local snapshot scanner with persistence collection and a hardened rule pipeline:
+`v0.4` provides a local snapshot scanner with persistence collection, hardened detections, and analyst-focused reporting:
 
 - System information collection
 - Process collection with parent process mapping and executable hashes when accessible
@@ -38,6 +39,8 @@ On Windows, run from an elevated PowerShell or Command Prompt. `amihacked scan` 
 - YAML-backed detections with stronger rule validation
 - Deterministic risk scoring with duplicate suppression and per-finding score details
 - JSON, Markdown, and HTML reports with evidence summaries
+- Executive summaries, collection health, finding groups, and timeline sections in reports
+- Report regeneration from existing case folders with `amihacked report <case_dir>`
 - Evidence file hashing in `manifest.json`
 - Elapsed scan timing and per-stage runtime metadata
 - Standalone `amihacked validate-rules` command
@@ -98,12 +101,15 @@ Important case files:
 - `findings/rule_matches.json`: direct YAML rule hits
 - `findings/correlations.json`: combined-signal findings
 - `findings/evidence_index.json`: artifact IDs mapped to analyst-readable evidence summaries
+- `findings/timeline.json`: timestamped process, log, persistence, and finding events
+- `findings/collection_health.json`: collector status, warnings, errors, and artifact counts
+- `findings/finding_groups.json`: related findings grouped by key evidence reference
 - `findings/risk_score.json`: deterministic score and reasons
 - `reports/`: JSON, Markdown, and HTML analyst reports
 
 ## Next Milestone
 
-`v0.4` is report and analyst workflow polish: richer HTML sections, finding grouping, case summaries, and easier evidence navigation.
+`v0.5` is the intel update system: local intel snapshots, Sigma/LOLBAS/MITRE/CISA KEV source scaffolding, and conversion into rule candidates without touching scanner code.
 
 ## Design Boundary
 

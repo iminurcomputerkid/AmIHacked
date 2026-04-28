@@ -27,8 +27,11 @@ from amihacked.detection.rule_loader import RuleLoader, validate_rule
 from amihacked.detection.scoring import ScoringEngine
 from amihacked.normalizers.evidence import normalize_scan_evidence
 from amihacked.reporting.html_report import build_html_report
+from amihacked.reporting.context import build_collection_health, build_report_context, sort_findings
 from amihacked.reporting.json_report import build_json_report
 from amihacked.reporting.markdown_report import build_markdown_report
+from amihacked.reporting.timeline import build_timeline
+from amihacked.storage.case_reader import CaseReader
 from amihacked.storage.case_writer import CaseWriter
 from amihacked.utils.runtime import ScanRuntime, format_duration
 from amihacked.utils.time import timestamp_for_id
@@ -192,17 +195,24 @@ def scan(
         timing.artifacts = len(findings)
 
     with runtime.stage("write:findings_reports"):
+        metadata = _metadata(context, runtime)
         evidence_index = build_evidence_index(evidence)
+        timeline = build_timeline(evidence, findings)
+        report_context = build_report_context(metadata, findings, evidence, collector_results, timeline)
+        sorted_findings = sort_findings(findings)
         writer.write_json("findings/rule_matches.json", matches, "rule_matches")
         writer.write_json("findings/correlations.json", correlations, "correlations")
-        writer.write_json("findings/findings.json", findings, "findings")
+        writer.write_json("findings/findings.json", sorted_findings, "findings")
         writer.write_json("findings/risk_score.json", risk_score, "risk_score")
         writer.write_json("findings/rule_validation.json", validation_results, "rule_validation")
         writer.write_json("findings/evidence_index.json", evidence_index, "evidence_index")
+        writer.write_json("findings/timeline.json", timeline, "timeline")
+        writer.write_json("findings/collection_health.json", report_context["collection_health"], "collection_health")
+        writer.write_json("findings/finding_groups.json", report_context["finding_groups"], "finding_groups")
 
-        writer.write_json("reports/report.json", build_json_report(case_id, findings, risk_score, evidence_index), "report")
-        writer.write_text("reports/report.md", build_markdown_report(case_id, findings, risk_score, evidence_index), "report")
-        writer.write_text("reports/report.html", build_html_report(case_id, findings, risk_score, evidence_index), "report")
+        writer.write_json("reports/report.json", build_json_report(case_id, sorted_findings, risk_score, evidence_index, report_context), "report")
+        writer.write_text("reports/report.md", build_markdown_report(case_id, sorted_findings, risk_score, evidence_index, report_context), "report")
+        writer.write_text("reports/report.html", build_html_report(case_id, sorted_findings, risk_score, evidence_index, report_context), "report")
 
     writer.write_json("metadata.json", _metadata(context, runtime), "metadata")
     writer.write_manifest()
@@ -297,9 +307,30 @@ def review_rules() -> None:
 
 @app.command()
 def report(case_dir: Annotated[Path, typer.Argument(help="Existing case directory.")]) -> None:
-    """Show where reports live for an existing case."""
-    reports_dir = case_dir / "reports"
-    console.print(f"Reports are under {reports_dir}")
+    """Rebuild reports for an existing case from saved findings and normalized evidence."""
+    reader = CaseReader(case_dir)
+    metadata = reader.read_json("metadata.json", {})
+    case_id = metadata.get("case_id") or case_dir.name
+    findings = sort_findings(reader.read_findings())
+    risk_score = reader.read_risk_score()
+    evidence = reader.read_evidence()
+    evidence_index = reader.read_json("findings/evidence_index.json", None) or build_evidence_index(evidence)
+    timeline = reader.read_json("findings/timeline.json", None) or build_timeline(evidence, findings)
+    collection_health = reader.read_json("findings/collection_health.json", None)
+    report_context = build_report_context(metadata, findings, evidence, None, timeline)
+    if collection_health:
+        report_context["collection_health"] = collection_health
+
+    writer = CaseWriter(case_dir=case_dir, case_id=case_id, collected_at=metadata.get("created_at") or timestamp_for_id())
+    writer.initialize()
+    writer.write_json("findings/evidence_index.json", evidence_index, "evidence_index")
+    writer.write_json("findings/timeline.json", timeline, "timeline")
+    writer.write_json("findings/collection_health.json", report_context["collection_health"], "collection_health")
+    writer.write_json("findings/finding_groups.json", report_context["finding_groups"], "finding_groups")
+    writer.write_json("reports/report.json", build_json_report(case_id, findings, risk_score, evidence_index, report_context), "report")
+    writer.write_text("reports/report.md", build_markdown_report(case_id, findings, risk_score, evidence_index, report_context), "report")
+    writer.write_text("reports/report.html", build_html_report(case_id, findings, risk_score, evidence_index, report_context), "report")
+    console.print(f"[bold green]Reports rebuilt[/bold green] {case_dir / 'reports'}")
 
 
 @app.command()
