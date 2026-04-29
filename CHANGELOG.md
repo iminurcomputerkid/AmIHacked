@@ -7,6 +7,22 @@ All notable AmIHacked implementation changes are tracked here.
 - Next planned milestone: `v0.5` intel update system.
 - Planned focus: local intel snapshots, source scaffolding for Sigma/LOLBAS/MITRE/CISA KEV, and conversion into rule candidates without modifying Python code.
 
+## v0.4.1
+
+- Added Windows installed software collection from HKLM/HKCU registry uninstall keys, including 32-bit WOW6432Node entries.
+- Added Windows security posture collection for Defender status, firewall profiles, Security Center antivirus products, UAC settings, and Defender Tamper Protection registry state when accessible.
+- Added Linux service inventory collection from systemd unit files with `systemctl` state enrichment when available.
+- Added Linux persistence collection for cron entries and XDG autostart desktop entries.
+- Added macOS persistence collection for LaunchAgents, LaunchDaemons, and basic cron entries.
+- Added raw and normalized case outputs for installed software and security posture evidence.
+- Wired Linux/macOS platform persistence artifacts into raw case output, normalized persistence evidence, correlations, scoring, timeline, and reports.
+- Enriched network connection artifacts with process path, command line, username, process create time, and IPv4/IPv6 family where accessible.
+- Hardened Windows service path enrichment with a PowerShell/CIM fallback for systems where WMIC is unavailable.
+- Replaced the stale Windows Event Log placeholder collector with a wrapper around the working common Windows log collector.
+- Added evidence index summaries and rule-validation field support for installed software, security posture, and platform persistence metadata.
+- Tightened user-writable persistence matching to evaluate extracted executable paths instead of benign `/tmp` command arguments.
+- Added mocked tests for Windows installed software/security posture, CIM service enrichment, Linux systemd services, Linux cron/XDG autostart, macOS launchd persistence, and Windows Event Log wrapping.
+
 ## v0.4.0
 
 - Added report context generation for executive summaries, artifact counts, severity counts, and top findings.

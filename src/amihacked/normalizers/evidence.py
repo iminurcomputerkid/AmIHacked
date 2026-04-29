@@ -9,6 +9,8 @@ def normalize_scan_evidence(raw: dict[str, list[dict[str, Any]]]) -> dict[str, l
         "network": normalize_artifacts(raw.get("network", []), "network"),
         "log": normalize_artifacts(raw.get("log", []), "log"),
         "persistence": normalize_artifacts(raw.get("persistence", []), "persistence"),
+        "installed_software": normalize_artifacts(raw.get("installed_software", []), "installed_software"),
+        "security_posture": normalize_artifacts(raw.get("security_posture", []), "security_posture"),
     }
 
 

@@ -26,13 +26,18 @@ On Windows, run from an elevated PowerShell or Command Prompt. `amihacked scan` 
 
 ## Current Version
 
-`v0.4` provides a local snapshot scanner with persistence collection, hardened detections, and analyst-focused reporting:
+`v0.4.1` provides a local snapshot scanner with persistence collection, cross-platform collection hardening, and analyst-focused reporting:
 
 - System information collection
 - Process collection with parent process mapping and executable hashes when accessible
-- Network connection collection with process ownership and public/private remote IP classification
+- Network connection collection with process ownership, process detail enrichment, IPv4/IPv6 family, and public/private remote IP classification
 - Local log/event collection as first-class evidence (`source: log`)
 - Windows persistence collection for Registry Run/RunOnce keys, Startup folders, scheduled tasks, and services
+- Windows installed software collection from registry uninstall keys
+- Windows security posture collection for Defender, firewall, Security Center antivirus products, UAC, and Tamper Protection state when accessible
+- Linux service collection from systemd unit files with service state enrichment when available
+- Linux persistence collection for cron entries and XDG autostart entries
+- macOS persistence collection for LaunchAgents, LaunchDaemons, and basic cron entries
 - A process/network join artifact
 - Normalized evidence files under `normalized/`
 - Rule matches, correlations, risk score, rule validation results, and evidence summaries under `findings/`
@@ -98,6 +103,9 @@ Important case files:
 
 - `raw/`: collector output before cleanup
 - `normalized/`: stable artifacts used by detections
+- `raw/platform_persistence.json`: Linux/macOS platform persistence sources such as cron, XDG autostart, and launchd
+- `raw/installed_software.json` and `normalized/installed_software.normalized.json`: Windows installed application inventory when available
+- `raw/security_posture.json` and `normalized/security_posture.normalized.json`: Windows security control posture when available
 - `findings/rule_matches.json`: direct YAML rule hits
 - `findings/correlations.json`: combined-signal findings
 - `findings/evidence_index.json`: artifact IDs mapped to analyst-readable evidence summaries

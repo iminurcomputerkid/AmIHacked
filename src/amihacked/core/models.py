@@ -29,6 +29,9 @@ class NetworkConnectionArtifact(ArtifactModel):
     type: str = "network"
     pid: int | None = None
     process_name: str | None = None
+    exe_path: str | None = None
+    command_line: str | None = None
+    username: str | None = None
     local_address: str | None = None
     local_port: int | None = None
     remote_address: str | None = None
@@ -62,6 +65,32 @@ class LogEventArtifact(ArtifactModel):
     level: str | None = None
     message: str | None = None
     raw: dict[str, Any] | str | None = None
+
+
+class InstalledSoftwareArtifact(ArtifactModel):
+    type: str = "installed_software"
+    source: str
+    name: str
+    version: str | None = None
+    publisher: str | None = None
+    install_date: str | None = None
+    install_location: str | None = None
+    uninstall_string: str | None = None
+    quiet_uninstall_string: str | None = None
+    registry_hive: str | None = None
+    registry_path: str | None = None
+    system_component: bool | None = None
+    windows_installer: bool | None = None
+    estimated_size_kb: int | None = None
+
+
+class SecurityPostureArtifact(ArtifactModel):
+    type: str = "security_posture"
+    source: str
+    name: str
+    status: str | None = None
+    enabled: bool | None = None
+    details: dict[str, Any] = Field(default_factory=dict)
 
 
 class CollectorResult(BaseModel):

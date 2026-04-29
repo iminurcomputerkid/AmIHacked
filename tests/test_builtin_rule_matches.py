@@ -75,6 +75,7 @@ def test_builtin_rules_match_representative_suspicious_evidence():
                     "source": "registry_run_key",
                     "name": "BadRun",
                     "command": "C:\\Users\\alice\\AppData\\Roaming\\evil.exe",
+                    "path": "C:\\Users\\alice\\AppData\\Roaming\\evil.exe",
                 },
                 {
                     "artifact_id": "persistence:task:test",
@@ -82,6 +83,7 @@ def test_builtin_rules_match_representative_suspicious_evidence():
                     "source": "scheduled_task",
                     "name": "BadTask",
                     "command": "C:\\Users\\alice\\AppData\\Roaming\\evil.exe",
+                    "path": "C:\\Users\\alice\\AppData\\Roaming\\evil.exe",
                 },
                 {
                     "artifact_id": "persistence:service:test",
@@ -89,6 +91,7 @@ def test_builtin_rules_match_representative_suspicious_evidence():
                     "source": "service",
                     "name": "BadService",
                     "command": "C:\\Users\\Public\\evil.exe",
+                    "path": "C:\\Users\\Public\\evil.exe",
                 },
                 {
                     "artifact_id": "persistence:remote:test",

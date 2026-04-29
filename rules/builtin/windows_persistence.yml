@@ -9,7 +9,7 @@ conditions:
   all:
     - field: source
       exists: true
-    - field: command
+    - field: path
       contains_any:
         - "\\AppData\\"
         - "\\Temp\\"

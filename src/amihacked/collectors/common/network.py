@@ -5,7 +5,7 @@ import psutil
 from amihacked.core.models import CollectorResult, NetworkConnectionArtifact
 from amihacked.core.scan_context import ScanContext
 from amihacked.utils.ip_utils import is_public_ip
-from amihacked.utils.time import utc_now_iso
+from amihacked.utils.time import from_timestamp, utc_now_iso
 
 
 class NetworkCollector:
@@ -16,11 +16,19 @@ class NetworkCollector:
     def collect(self, context: ScanContext) -> CollectorResult:
         artifacts: list[dict] = []
         warnings: list[str] = []
-        process_names: dict[int, str] = {}
+        process_details: dict[int, dict] = {}
 
-        for proc in psutil.process_iter(["pid", "name"]):
+        for proc in psutil.process_iter(["pid", "name", "exe", "cmdline", "username", "create_time"]):
             try:
-                process_names[proc.info["pid"]] = proc.info.get("name") or ""
+                command_line = " ".join(proc.info.get("cmdline") or []) or None
+                create_time = proc.info.get("create_time")
+                process_details[proc.info["pid"]] = {
+                    "process_name": proc.info.get("name") or "",
+                    "exe_path": proc.info.get("exe"),
+                    "command_line": command_line,
+                    "username": proc.info.get("username"),
+                    "process_create_time": from_timestamp(create_time) if create_time else None,
+                }
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 continue
 
@@ -38,10 +46,14 @@ class NetworkCollector:
             remote_token = remote_address or "none"
             remote_port_token = remote_port if remote_port is not None else "none"
             local_port_token = local_port if local_port is not None else "none"
+            proc = process_details.get(pid) if pid else {}
             artifact = NetworkConnectionArtifact(
                 artifact_id=f"network:{pid or 'unknown'}:{remote_token}:{remote_port_token}:{local_port_token}:{index}",
                 pid=pid,
-                process_name=process_names.get(pid) if pid else None,
+                process_name=proc.get("process_name"),
+                exe_path=proc.get("exe_path"),
+                command_line=proc.get("command_line"),
+                username=proc.get("username"),
                 local_address=local_address,
                 local_port=local_port,
                 remote_address=remote_address,
@@ -50,7 +62,10 @@ class NetworkCollector:
                 protocol=protocol,
                 is_public_remote=is_public_ip(remote_address),
             )
-            artifacts.append(artifact.model_dump())
+            artifact_dict = artifact.model_dump()
+            artifact_dict["process_create_time"] = proc.get("process_create_time")
+            artifact_dict["family"] = self._family_name(connection.family)
+            artifacts.append(artifact_dict)
 
         return CollectorResult(
             collector_name=self.name,
@@ -72,4 +87,12 @@ class NetworkCollector:
             return "tcp"
         if sock_type == socket.SOCK_DGRAM:
             return "udp"
+        return None
+
+    @staticmethod
+    def _family_name(family: int) -> str | None:
+        if family == socket.AF_INET:
+            return "ipv4"
+        if family == socket.AF_INET6:
+            return "ipv6"
         return None

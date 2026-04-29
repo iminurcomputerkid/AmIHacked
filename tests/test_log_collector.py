@@ -2,6 +2,7 @@ import json
 import subprocess
 
 from amihacked.collectors.common.logs import LogCollector
+from amihacked.collectors.windows.windows_event_logs import WindowsEventLogsCollector
 from amihacked.core.scan_context import ScanContext
 
 
@@ -60,6 +61,38 @@ def test_systemd_journal_byte_array_message_is_preserved(monkeypatch, tmp_path):
     result = LogCollector(max_lines_per_file=10).collect(_context(tmp_path))
 
     assert result.artifacts[0]["message"] == "Failed"
+
+
+def test_windows_event_logs_collector_wraps_common_windows_log_query(monkeypatch, tmp_path):
+    row = {
+        "LogName": "Security",
+        "ProviderName": "Microsoft-Windows-Security-Auditing",
+        "Id": 4625,
+        "RecordId": 10,
+        "TimeCreated": "2026-04-28T01:00:00Z",
+        "MachineName": "HOST",
+        "LevelDisplayName": "Information",
+        "Message": "An account failed to log on.",
+    }
+    monkeypatch.setattr("amihacked.collectors.common.logs.shutil.which", lambda name: "powershell")
+    monkeypatch.setattr(
+        "amihacked.collectors.common.logs.subprocess.run",
+        lambda *args, **kwargs: subprocess.CompletedProcess(args=args, returncode=0, stdout=json.dumps([row]), stderr=""),
+    )
+
+    result = WindowsEventLogsCollector(max_windows_events_per_log=1).collect(
+        ScanContext(
+            case_id="case-test",
+            case_dir=tmp_path,
+            started_at="2026-04-25T18:30:00Z",
+            platform="windows",
+            elevated=True,
+        )
+    )
+
+    assert result.collector_name == "event_logs"
+    assert result.artifacts
+    assert result.artifacts[0]["source"] == "windows_event_log"
 
 
 def _context(tmp_path):

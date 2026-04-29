@@ -11,7 +11,7 @@ def test_normalized_evidence_preserves_sources_and_deduplicates_ids():
         }
     )
 
-    assert set(evidence) == {"process", "network", "log", "persistence"}
+    assert set(evidence) == {"process", "network", "log", "persistence", "installed_software", "security_posture"}
     assert evidence["process"][0]["type"] == "process"
     assert evidence["log"][0]["type"] == "log"
 

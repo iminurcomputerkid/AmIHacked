@@ -32,5 +32,6 @@ class CaseReader:
             "network": self.read_json("normalized/network.normalized.json", []),
             "log": self.read_json("normalized/logs.normalized.json", []),
             "persistence": self.read_json("normalized/persistence.normalized.json", []),
+            "installed_software": self.read_json("normalized/installed_software.normalized.json", []),
+            "security_posture": self.read_json("normalized/security_posture.normalized.json", []),
         }
-

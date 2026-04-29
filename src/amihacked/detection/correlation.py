@@ -109,7 +109,7 @@ class CorrelationEngine:
             name = artifact.get("name") or "unnamed"
             lowered_command = str(command or path or "").lower()
 
-            if looks_user_writable(path) or looks_user_writable(command):
+            if looks_user_writable(path):
                 findings.append(
                     self._finding(
                         title="Persistence Mechanism Points To User-Writable Path",

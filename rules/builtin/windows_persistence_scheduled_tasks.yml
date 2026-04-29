@@ -9,7 +9,7 @@ conditions:
   all:
     - field: source
       equals: scheduled_task
-    - field: command
+    - field: path
       contains_any:
         - "\\AppData\\"
         - "\\Temp\\"
@@ -20,4 +20,3 @@ mitre:
     technique_name: Scheduled Task
     tactic: Persistence
 recommendation: Review the task author, trigger, command path, signer, file hash, and whether it was recently created.
-

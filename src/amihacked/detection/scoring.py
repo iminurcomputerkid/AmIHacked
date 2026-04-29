@@ -70,7 +70,7 @@ class ScoringEngine:
                 finding.score_details.append("+10 Unsigned binary")
                 reasons.append(ScoreReason(points=10, reason="Unsigned binary", finding_id=finding.id))
 
-            if any(looks_user_writable(ref.get("exe_path") or ref.get("path") or ref.get("command")) for ref in refs):
+            if any(looks_user_writable(ref.get("exe_path") or ref.get("path")) for ref in refs):
                 finding.modifiers.append("Running from AppData/Temp or user-writable path")
                 finding.score_impact += 10
                 finding.score_details.append("+10 Executable from AppData/Temp or user-writable path")

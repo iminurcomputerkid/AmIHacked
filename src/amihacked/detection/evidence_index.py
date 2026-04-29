@@ -26,6 +26,10 @@ def summarize_artifact(artifact: dict[str, Any]) -> str:
         return _summarize_log(artifact)
     if artifact_type == "persistence":
         return _summarize_persistence(artifact)
+    if artifact_type == "installed_software":
+        return _summarize_installed_software(artifact)
+    if artifact_type == "security_posture":
+        return _summarize_security_posture(artifact)
     return artifact.get("artifact_id", "unknown artifact")
 
 
@@ -65,3 +69,27 @@ def _summarize_persistence(artifact: dict[str, Any]) -> str:
     name = artifact.get("name") or "unnamed"
     command = artifact.get("command") or artifact.get("path") or ""
     return f"{source} {name} {command}".strip()
+
+
+def _summarize_installed_software(artifact: dict[str, Any]) -> str:
+    name = artifact.get("name") or "unknown software"
+    version = artifact.get("version")
+    publisher = artifact.get("publisher")
+    parts = [str(name)]
+    if version:
+        parts.append(f"version={version}")
+    if publisher:
+        parts.append(f"publisher={publisher}")
+    return " ".join(parts)
+
+
+def _summarize_security_posture(artifact: dict[str, Any]) -> str:
+    name = artifact.get("name") or artifact.get("source") or "security posture"
+    status = artifact.get("status")
+    enabled = artifact.get("enabled")
+    parts = [str(name)]
+    if status:
+        parts.append(f"status={status}")
+    if enabled is not None:
+        parts.append(f"enabled={enabled}")
+    return " ".join(parts)

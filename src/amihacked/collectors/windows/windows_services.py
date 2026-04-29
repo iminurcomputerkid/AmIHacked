@@ -1,3 +1,5 @@
+import json
+import shutil
 import subprocess
 
 import psutil
@@ -17,9 +19,8 @@ class WindowsServicesCollector:
     def collect(self, context: ScanContext) -> CollectorResult:
         artifacts: list[dict] = []
         warnings: list[str] = []
-        wmic_paths = _wmic_service_paths()
-        if not wmic_paths:
-            warnings.append("WMIC service path enrichment unavailable; service binary paths may be missing.")
+        service_paths, path_warnings = _service_paths()
+        warnings.extend(path_warnings)
 
         try:
             services = psutil.win_service_iter()
@@ -39,7 +40,7 @@ class WindowsServicesCollector:
                 warnings.append(f"Could not read service {getattr(service, 'name', lambda: 'unknown')()}: {exc}")
                 continue
             name = info.get("name") or service.name()
-            command = wmic_paths.get(name) or info.get("binpath")
+            command = service_paths.get(name) or info.get("binpath")
             artifact = {
                 "artifact_id": stable_id("persistence", "service", name, command),
                 "type": "persistence",
@@ -75,6 +76,50 @@ def _service_enabled(start_type: str | None) -> bool | None:
     if lowered in {"automatic", "manual"}:
         return True
     return None
+
+
+def _service_paths() -> tuple[dict[str, str], list[str]]:
+    paths = _cim_service_paths()
+    wmic_paths = _wmic_service_paths()
+    if wmic_paths:
+        paths.update({name: path for name, path in wmic_paths.items() if name not in paths})
+    warnings: list[str] = []
+    if not paths:
+        warnings.append("PowerShell/CIM and WMIC service path enrichment unavailable; service binary paths may be missing.")
+    return paths, warnings
+
+
+def _cim_service_paths() -> dict[str, str]:
+    powershell = shutil.which("powershell") or shutil.which("pwsh")
+    if not powershell:
+        return {}
+    command = "Get-CimInstance Win32_Service | Select-Object Name,PathName | ConvertTo-Json -Depth 3"
+    try:
+        completed = subprocess.run(
+            [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return {}
+    if completed.returncode != 0 or not completed.stdout.strip():
+        return {}
+    try:
+        payload = json.loads(completed.stdout)
+    except json.JSONDecodeError:
+        return {}
+    items = payload if isinstance(payload, list) else [payload]
+    paths: dict[str, str] = {}
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        name = item.get("Name")
+        path = item.get("PathName")
+        if name and path:
+            paths[str(name)] = str(path)
+    return paths
 
 
 def _wmic_service_paths() -> dict[str, str]:

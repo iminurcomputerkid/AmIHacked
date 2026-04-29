@@ -9,7 +9,7 @@ conditions:
   all:
     - field: source
       equals: service
-    - field: command
+    - field: path
       contains_any:
         - "\\AppData\\"
         - "\\Temp\\"
@@ -20,4 +20,3 @@ mitre:
     technique_name: Windows Service
     tactic: Persistence
 recommendation: Review service name, binary path, signer, service account, file hash, and installation time from event logs.
-

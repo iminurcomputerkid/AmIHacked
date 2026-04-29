@@ -12,8 +12,13 @@ from amihacked.collectors.common.logs import LogCollector
 from amihacked.collectors.common.network import NetworkCollector
 from amihacked.collectors.common.processes import ProcessCollector
 from amihacked.collectors.common.system import SystemCollector
+from amihacked.collectors.linux.linux_persistence import LinuxPersistenceCollector
+from amihacked.collectors.linux.linux_services import LinuxServicesCollector
+from amihacked.collectors.macos.macos_persistence import MacOSPersistenceCollector
+from amihacked.collectors.windows.windows_installed_software import WindowsInstalledSoftwareCollector
 from amihacked.collectors.windows.windows_registry import WindowsRegistryCollector
 from amihacked.collectors.windows.windows_scheduled_tasks import WindowsScheduledTasksCollector
+from amihacked.collectors.windows.windows_security_posture import WindowsSecurityPostureCollector
 from amihacked.collectors.windows.windows_services import WindowsServicesCollector
 from amihacked.collectors.windows.windows_startup_items import WindowsStartupItemsCollector
 from amihacked.core.permissions import elevation_status, is_elevated, relaunch_with_elevation
@@ -105,8 +110,14 @@ def scan(
                 WindowsRegistryCollector(),
                 WindowsScheduledTasksCollector(),
                 WindowsServicesCollector(),
+                WindowsInstalledSoftwareCollector(),
+                WindowsSecurityPostureCollector(),
             ]
         )
+    elif context.platform == "linux":
+        collectors.extend([LinuxServicesCollector(), LinuxPersistenceCollector()])
+    elif context.platform == "macos":
+        collectors.append(MacOSPersistenceCollector())
     if not skip_logs:
         collectors.append(LogCollector(max_lines_per_file=log_lines))
     collector_results = {}
@@ -141,11 +152,15 @@ def scan(
     registry_result = collector_results.get("registry_run_keys")
     scheduled_tasks_result = collector_results.get("scheduled_tasks")
     services_result = collector_results.get("services")
+    installed_software_result = collector_results.get("installed_software")
+    security_posture_result = collector_results.get("security_posture")
+    platform_persistence_result = collector_results.get("platform_persistence")
     persistence_artifacts = [
         *(startup_result.artifacts if startup_result else []),
         *(registry_result.artifacts if registry_result else []),
         *(scheduled_tasks_result.artifacts if scheduled_tasks_result else []),
         *(services_result.artifacts if services_result else []),
+        *(platform_persistence_result.artifacts if platform_persistence_result else []),
     ]
 
     with runtime.stage("write:raw_artifacts"):
@@ -156,6 +171,21 @@ def scan(
         writer.write_json("raw/registry_run_keys.json", registry_result.artifacts if registry_result else [], "registry_run_keys")
         writer.write_json("raw/scheduled_tasks.json", scheduled_tasks_result.artifacts if scheduled_tasks_result else [], "scheduled_tasks")
         writer.write_json("raw/services.json", services_result.artifacts if services_result else [], "services")
+        writer.write_json(
+            "raw/platform_persistence.json",
+            platform_persistence_result.artifacts if platform_persistence_result else [],
+            "platform_persistence",
+        )
+        writer.write_json(
+            "raw/installed_software.json",
+            installed_software_result.artifacts if installed_software_result else [],
+            "installed_software",
+        )
+        writer.write_json(
+            "raw/security_posture.json",
+            security_posture_result.artifacts if security_posture_result else [],
+            "security_posture",
+        )
         writer.write_json("raw/log_events.json", log_result.artifacts if log_result else [], "log")
         writer.write_json(
             "raw/process_network_map.json",
@@ -168,6 +198,8 @@ def scan(
         "network": network_result.artifacts,
         "log": log_result.artifacts if log_result else [],
         "persistence": persistence_artifacts,
+        "installed_software": installed_software_result.artifacts if installed_software_result else [],
+        "security_posture": security_posture_result.artifacts if security_posture_result else [],
     }
     with runtime.stage("normalize:evidence") as timing:
         evidence = normalize_scan_evidence(raw_evidence)
@@ -178,6 +210,16 @@ def scan(
         writer.write_json("normalized/network.normalized.json", evidence["network"], "normalized_network")
         writer.write_json("normalized/logs.normalized.json", evidence["log"], "normalized_log")
         writer.write_json("normalized/persistence.normalized.json", evidence["persistence"], "normalized_persistence")
+        writer.write_json(
+            "normalized/installed_software.normalized.json",
+            evidence["installed_software"],
+            "normalized_installed_software",
+        )
+        writer.write_json(
+            "normalized/security_posture.normalized.json",
+            evidence["security_posture"],
+            "normalized_security_posture",
+        )
 
     with runtime.stage("detect:rules") as timing:
         rules, validation_results = RuleLoader(config.rule_dirs).load_rules()

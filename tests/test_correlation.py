@@ -51,3 +51,20 @@ def test_persistence_user_writable_path_creates_correlation():
     findings = CorrelationEngine().run({"process": [], "network": [], "log": [], "persistence": persistence}, [])
 
     assert any(finding.title == "Persistence Mechanism Points To User-Writable Path" for finding in findings)
+
+
+def test_persistence_tmp_argument_does_not_create_user_writable_path_correlation():
+    persistence = [
+        {
+            "artifact_id": "persistence:service",
+            "type": "persistence",
+            "source": "linux_service",
+            "name": "xfs_scrub.service",
+            "command": "/usr/sbin/xfs_scrub -M /tmp/scrub",
+            "path": "/usr/sbin/xfs_scrub",
+        }
+    ]
+
+    findings = CorrelationEngine().run({"process": [], "network": [], "log": [], "persistence": persistence}, [])
+
+    assert not any(finding.title == "Persistence Mechanism Points To User-Writable Path" for finding in findings)
